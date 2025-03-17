@@ -3,7 +3,7 @@
 This project is a sample Flutter application integrated with **CleverTap SDK v3.2.0**. This guide outlines the steps taken to successfully upgrade to the latest SDK version and resolve compatibility issues.
 
 ## Prerequisites
-- Flutter **3.22.0** or above
+- Flutter **3.2.0**
 - Android Studio with JDK 17
 - Gradle 8.0+
 
