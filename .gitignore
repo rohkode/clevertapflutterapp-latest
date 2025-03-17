@@ -6,4 +6,6 @@ build/
 .pub/
 .idea/
 .vscode/
+.flutter-plugins
 .flutter-plugins-dependencies
+*.iml
