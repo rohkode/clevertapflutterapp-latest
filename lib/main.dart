@@ -1,6 +1,10 @@
+// ignore_for_file: avoid_print
+
 import 'dart:io';
 import 'package:clevertap_plugin/clevertap_plugin.dart';
 import 'package:flutter/material.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -22,6 +26,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'CleverTap Flutter Project',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -29,6 +34,9 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const MyHomePage(title: 'CleverTap Flutter Project'),
+      routes: {
+    '/details': (_) => const DetailsScreen(), // define your route
+  },
     );
   }
 }
@@ -49,10 +57,14 @@ class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
 
+  final CleverTapPlugin _clevertapPlugin = CleverTapPlugin();
+
   @override
   void initState() {
     super.initState();
     _initializeCleverTap();
+    _clevertapPlugin.setCleverTapPushClickedPayloadReceivedHandler(pushClickedPayloadReceived);
+
   }
 
   void _initializeCleverTap() {
@@ -71,6 +83,32 @@ class _MyHomePageState extends State<MyHomePage> {
     CleverTapPlugin.setLocation(19.07, 72.87);
     _showPushPrimer();
   }
+
+  // Future<dynamic> _platformCallHandler(MethodCall call) async {
+  //   switch (call.method) {
+  //     case 'pushClickedPayloadReceived':
+  //       final Map<String, dynamic> payload = Map<String, dynamic>.from(call.arguments);
+  //       print("Push Clicked Payload: $payload");
+
+  //       if (payload.containsKey('wzrk_dl') &&
+  //           payload['wzrk_dl'] != null &&
+  //           payload['wzrk_dl'].toString().isNotEmpty) {
+  //         final deepLink = payload['wzrk_dl'];
+  //         print("Deep Link: $deepLink");
+
+  //         // Basic route matching for demonstration
+  //         if (deepLink == 'myapp://screen/details') {
+  //           navigatorKey.currentState?.pushNamed('/details');
+  //         }
+  //       } else {
+  //         print("No deep link in payload");
+  //       }
+  //       break;
+
+  //     default:
+  //       print("Unknown method ${call.method}");
+  //   }
+  // }
 
   void _showPushPrimer() {
     var pushPrimerJSON = {
@@ -94,29 +132,39 @@ class _MyHomePageState extends State<MyHomePage> {
     CleverTapPlugin.promptPushPrimer(pushPrimerJSON);
   }
 
-  // CleverTapPlugin.getInitialPushPayload().then((payload) {
-  //   if (payload != null && payload['deep_link'] != null) {
-  //     _handleDeepLink(payload['deep_link']);
-  //   }
-  // });
+  void pushClickedPayloadReceived(Map<String, dynamic> payload) {
+  print("Push Clicked Payload: $payload");
 
-  // CleverTapPlugin.onPushNotificationClicked.listen((event) {
-  //   final deepLink = event['deep_link'] ?? '';
-  //   if (deepLink.isNotEmpty) {
-  //     _handleDeepLink(deepLink);
-  //   }
-  // });
+  // Check if the deep link is in the payload
+  String? deepLink = payload['deep_link'] ?? payload['wzrk_dl']; // Assuming payload contains 'deep_link' key
 
-  // void _handleDeepLink(String deepLink) {
-  //   if (deepLink.startsWith("myapp://screen/details")) {
-  //     Navigator.push(
-  //       context,
-  //       MaterialPageRoute(builder: (context) => const DetailsScreen()),
-  //     );
-  //   } else {
-  //     print("Unknown deep link: $deepLink");
-  //   }
-  // }
+  if (deepLink != null && deepLink.isNotEmpty) {
+      _handleDeepLink(deepLink);
+    } else {
+      // Handle cases where there is no deep link
+      print("No deep link in payload");
+    }
+  }
+
+  // Handle the deep link and navigate to the respective screen
+  void _handleDeepLink(String deepLink) {
+    // Display the deep link as an alert
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Deep Link Triggered"),
+        content: Text("Received Deep Link: $deepLink"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text("OK"),
+          ),
+        ],
+      ),
+    );
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -181,7 +229,6 @@ class _MyHomePageState extends State<MyHomePage> {
       'MSG-whatsapp': true,
       'MSG-push': true,
     };
-    print("User Profile: $profile");
     CleverTapPlugin.onUserLogin(profile);
   }
 

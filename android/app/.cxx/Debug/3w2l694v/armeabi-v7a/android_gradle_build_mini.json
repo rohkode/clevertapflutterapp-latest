@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/Users/rohit.khandka/flutter/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/Users/rohit.khandka/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/Users/rohit.khandka/Documents/Back2-Rohit/clevertapflutterapp/android/app/.cxx/Debug/3w2l694v/armeabi-v7a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/Users/rohit.khandka/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/Users/rohit.khandka/Documents/Back2-Rohit/clevertapflutterapp/android/app/.cxx/Debug/3w2l694v/armeabi-v7a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}
