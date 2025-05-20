@@ -12,7 +12,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  clevertap_plugin: 3.2.0
+  clevertap_plugin: ^3.3.1
   # uni_links: ^0.5.0
 
   cupertino_icons: ^1.0.8

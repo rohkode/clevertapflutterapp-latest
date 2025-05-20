@@ -29,10 +29,10 @@ packages:
     dependency: "direct main"
     description:
       name: clevertap_plugin
-      sha256: "31a3e0ed56abfd424d95cde7ce0908644d6f6bde9c75be46e67ccd4cf089e55f"
+      sha256: "0e5f91d6cebde0cb7cb2271c5469470fedb8f2cb37b6ecdb0bd4cceb1c03c067"
       url: "https://pub.dev"
     source: hosted
-    version: "3.2.0"
+    version: "3.3.1"
   clock:
     dependency: transitive
     description:
