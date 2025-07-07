@@ -1,0 +1,18 @@
+current directory: /Users/rohit.khandka/Documents/Back2-Rohit/clevertapflutterapp/ios/vendor/bundle/ruby/3.4.0/gems/nkf-0.2.0/ext/nkf
+/Users/rohit.khandka/homebrew/opt/ruby/bin/ruby extconf.rb
+creating Makefile
+
+current directory: /Users/rohit.khandka/Documents/Back2-Rohit/clevertapflutterapp/ios/vendor/bundle/ruby/3.4.0/gems/nkf-0.2.0/ext/nkf
+make DESTDIR\= sitearchdir\=./.gem.20250521-21761-oqk7xw sitelibdir\=./.gem.20250521-21761-oqk7xw clean
+
+current directory: /Users/rohit.khandka/Documents/Back2-Rohit/clevertapflutterapp/ios/vendor/bundle/ruby/3.4.0/gems/nkf-0.2.0/ext/nkf
+make DESTDIR\= sitearchdir\=./.gem.20250521-21761-oqk7xw sitelibdir\=./.gem.20250521-21761-oqk7xw
+compiling nkf.c
+linking shared-object nkf.bundle
+
+current directory: /Users/rohit.khandka/Documents/Back2-Rohit/clevertapflutterapp/ios/vendor/bundle/ruby/3.4.0/gems/nkf-0.2.0/ext/nkf
+make DESTDIR\= sitearchdir\=./.gem.20250521-21761-oqk7xw sitelibdir\=./.gem.20250521-21761-oqk7xw install
+/usr/bin/install -c -m 0755 nkf.bundle ./.gem.20250521-21761-oqk7xw
+
+current directory: /Users/rohit.khandka/Documents/Back2-Rohit/clevertapflutterapp/ios/vendor/bundle/ruby/3.4.0/gems/nkf-0.2.0/ext/nkf
+make DESTDIR\= sitearchdir\=./.gem.20250521-21761-oqk7xw sitelibdir\=./.gem.20250521-21761-oqk7xw clean

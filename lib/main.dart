@@ -35,8 +35,8 @@ class MyApp extends StatelessWidget {
       ),
       home: const MyHomePage(title: 'CleverTap Flutter Project'),
       routes: {
-    '/details': (_) => const DetailsScreen(), // define your route
-  },
+        '/details': (_) => const DetailsScreen(),
+      },
     );
   }
 }
@@ -51,7 +51,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
   final TextEditingController _identityController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -64,7 +63,6 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     _initializeCleverTap();
     _clevertapPlugin.setCleverTapPushClickedPayloadReceivedHandler(pushClickedPayloadReceived);
-
   }
 
   void _initializeCleverTap() {
@@ -83,32 +81,6 @@ class _MyHomePageState extends State<MyHomePage> {
     CleverTapPlugin.setLocation(19.07, 72.87);
     _showPushPrimer();
   }
-
-  // Future<dynamic> _platformCallHandler(MethodCall call) async {
-  //   switch (call.method) {
-  //     case 'pushClickedPayloadReceived':
-  //       final Map<String, dynamic> payload = Map<String, dynamic>.from(call.arguments);
-  //       print("Push Clicked Payload: $payload");
-
-  //       if (payload.containsKey('wzrk_dl') &&
-  //           payload['wzrk_dl'] != null &&
-  //           payload['wzrk_dl'].toString().isNotEmpty) {
-  //         final deepLink = payload['wzrk_dl'];
-  //         print("Deep Link: $deepLink");
-
-  //         // Basic route matching for demonstration
-  //         if (deepLink == 'myapp://screen/details') {
-  //           navigatorKey.currentState?.pushNamed('/details');
-  //         }
-  //       } else {
-  //         print("No deep link in payload");
-  //       }
-  //       break;
-
-  //     default:
-  //       print("Unknown method ${call.method}");
-  //   }
-  // }
 
   void _showPushPrimer() {
     var pushPrimerJSON = {
@@ -132,39 +104,51 @@ class _MyHomePageState extends State<MyHomePage> {
     CleverTapPlugin.promptPushPrimer(pushPrimerJSON);
   }
 
+  void _showAppInbox() {
+  CleverTapPlugin.showInbox({
+    'title': 'App Inbox',
+    'tabs': ['Offers', 'Promotions'],
+    'backgroundColor': '#FFFFFF',
+    'titleColor': '#000000',
+    'messageColor': '#000000',
+    'buttonBorderColor': '#000000',
+    'buttonBackgroundColor': '#000000',
+    'buttonTextColor': '#FFFFFF',
+    'noMessageText': 'No Messages',
+    'noMessageTextColor': '#000000',
+  });
+}
+
+
   void pushClickedPayloadReceived(Map<String, dynamic> payload) {
-  print("Push Clicked Payload: $payload");
+    print("Push Clicked Payload: $payload");
 
-  // Check if the deep link is in the payload
-  String? deepLink = payload['deep_link'] ?? payload['wzrk_dl']; // Assuming payload contains 'deep_link' key
+    String? deepLink = payload['deep_link'] ?? payload['wzrk_dl'];
 
-  if (deepLink != null && deepLink.isNotEmpty) {
+    if (deepLink != null && deepLink.isNotEmpty) {
       _handleDeepLink(deepLink);
     } else {
-      // Handle cases where there is no deep link
       print("No deep link in payload");
     }
   }
 
-  // Handle the deep link and navigate to the respective screen
   void _handleDeepLink(String deepLink) {
-    // Display the deep link as an alert
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Deep Link Triggered"),
-        content: Text("Received Deep Link: $deepLink"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text("OK"),
-          ),
-        ],
-      ),
-    );
-  });
-}
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("Deep Link Triggered"),
+          content: Text("Received Deep Link: $deepLink"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -172,6 +156,12 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
         backgroundColor: Colors.deepPurple,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.mail_outline,color: Colors.white),
+            onPressed: _showAppInbox,
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -247,7 +237,6 @@ class _MyHomePageState extends State<MyHomePage> {
     CleverTapPlugin.profileSet(profile);
   }
 
-
   void _recordProductViewed() {
     CleverTapPlugin.recordEvent("Product Viewed Flutter", {});
   }
@@ -260,7 +249,6 @@ class _MyHomePageState extends State<MyHomePage> {
     CleverTapPlugin.recordEvent("Product Viewed Flutter Properties", eventData);
   }
 
-  }
   void _recordChargedEvent() {
     var chargeDetails = {
       'Amount': 300,
@@ -283,6 +271,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     CleverTapPlugin.recordChargedEvent(chargeDetails, items);
   }
+}
 
 class DetailsScreen extends StatelessWidget {
   const DetailsScreen({super.key});

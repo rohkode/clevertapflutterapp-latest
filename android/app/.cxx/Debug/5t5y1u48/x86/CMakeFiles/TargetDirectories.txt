@@ -1,0 +1,2 @@
+/Users/rohit.khandka/Documents/Back2-Rohit/clevertapflutterapp/android/app/.cxx/Debug/5t5y1u48/x86/CMakeFiles/edit_cache.dir
+/Users/rohit.khandka/Documents/Back2-Rohit/clevertapflutterapp/android/app/.cxx/Debug/5t5y1u48/x86/CMakeFiles/rebuild_cache.dir
