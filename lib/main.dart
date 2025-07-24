@@ -3,6 +3,8 @@
 import 'dart:io';
 import 'package:clevertap_plugin/clevertap_plugin.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:uni_links/uni_links.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -13,6 +15,10 @@ class MyHttpOverrides extends HttpOverrides {
       ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
   }
 }
+
+// Deep Link Format:
+// Internal: myapp://details (offers or promos)
+// Universal: https://ct-web-sdk-react.vercel.app/details (offers or promos)
 
 void main() {
   HttpOverrides.global = MyHttpOverrides();
@@ -33,9 +39,12 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'CleverTap Flutter Project'),
+      initialRoute: '/',
       routes: {
+        '/': (_) => const MyHomePage(title: 'CleverTap Flutter Project'),
         '/details': (_) => const DetailsScreen(),
+        '/offers': (_) => const OffersScreen(),
+        '/promo': (_) => const PromoScreen(),
       },
     );
   }
@@ -43,7 +52,6 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
   final String title;
 
   @override
@@ -51,18 +59,23 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final TextEditingController _identityController = TextEditingController();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
-
   final CleverTapPlugin _clevertapPlugin = CleverTapPlugin();
+  static const platform = MethodChannel('myChannel');
+
+  final _identityController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+
+  String? _lastHandledLink;
 
   @override
   void initState() {
     super.initState();
     _initializeCleverTap();
-    _clevertapPlugin.setCleverTapPushClickedPayloadReceivedHandler(pushClickedPayloadReceived);
+    _setupPushHandlers();
+    _listenToMethodChannelLinks();
+    _listenToUniLinks();
   }
 
   void _initializeCleverTap() {
@@ -86,8 +99,7 @@ class _MyHomePageState extends State<MyHomePage> {
     var pushPrimerJSON = {
       'inAppType': 'half-interstitial',
       'titleText': 'Get Notified',
-      'messageText': 'Please enable notifications on your device to use Push Notifications.',
-      'followDeviceOrientation': false,
+      'messageText': 'Please enable notifications to use Push Notifications.',
       'positiveBtnText': 'Allow',
       'negativeBtnText': 'Cancel',
       'fallbackToSettings': true,
@@ -100,69 +112,121 @@ class _MyHomePageState extends State<MyHomePage> {
       'btnBorderRadius': '4',
       'imageUrl': 'https://logowik.com/content/uploads/images/clevertap5229.jpg'
     };
-
     CleverTapPlugin.promptPushPrimer(pushPrimerJSON);
   }
 
-  void _showAppInbox() {
-  CleverTapPlugin.showInbox({
-    'title': 'App Inbox',
-    'tabs': ['Offers', 'Promotions'],
-    'backgroundColor': '#FFFFFF',
-    'titleColor': '#000000',
-    'messageColor': '#000000',
-    'buttonBorderColor': '#000000',
-    'buttonBackgroundColor': '#000000',
-    'buttonTextColor': '#FFFFFF',
-    'noMessageText': 'No Messages',
-    'noMessageTextColor': '#000000',
-  });
-}
-
-
-  void pushClickedPayloadReceived(Map<String, dynamic> payload) {
-    print("Push Clicked Payload: $payload");
-
-    String? deepLink = payload['deep_link'] ?? payload['wzrk_dl'];
-
-    if (deepLink != null && deepLink.isNotEmpty) {
-      _handleDeepLink(deepLink);
-    } else {
-      print("No deep link in payload");
-    }
+  void _setupPushHandlers() {
+    _clevertapPlugin.setCleverTapPushClickedPayloadReceivedHandler((payload) {
+      print("Push Clicked Payload: $payload");
+      final deepLink = payload['deep_link'] ?? payload['wzrk_dl'];
+      if (deepLink != null && deepLink.isNotEmpty) {
+        _handleDeepLink(deepLink, isFromPush: true);
+      }
+    });
   }
 
-  void _handleDeepLink(String deepLink) {
+  void _listenToMethodChannelLinks() {
+    platform.setMethodCallHandler((call) async {
+      if (call.method == "handleDeepLink") {
+        String? deepLink = call.arguments as String?;
+        if (deepLink != null) {
+          _handleDeepLink(deepLink, isFromPush: false);
+        }
+      }
+    });
+  }
+
+  void _listenToUniLinks() {
+    getInitialUri().then((uri) {
+      if (uri != null) _handleDeepLink(uri.toString(), isFromPush: false);
+    });
+    uriLinkStream.listen((uri) {
+      if (uri != null) _handleDeepLink(uri.toString(), isFromPush: false);
+    }, onError: (err) {
+      print("UniLinks error: $err");
+    });
+  }
+
+  void _handleDeepLink(String link, {required bool isFromPush}) {
+    if (link == _lastHandledLink) return;
+    _lastHandledLink = link;
+
+    print("Handling Deep Link: $link");
+    final uri = Uri.parse(link);
+
+    bool isInternal = link.startsWith("myapp://");
+    String? route;
+
+    if (uri.path.contains("details")) route = '/details';
+    if (uri.path.contains("offers")) route = '/offers';
+    if (uri.path.contains("promo")) route = '/promo';
+
+    if (isInternal) {
+    // Show AlertDialog for internal links
     WidgetsBinding.instance.addPostFrameCallback((_) {
       showDialog(
-        context: context,
+        context: navigatorKey.currentContext!,
         builder: (_) => AlertDialog(
-          title: const Text("Deep Link Triggered"),
-          content: Text("Received Deep Link: $deepLink"),
+          title: const Text("Internal Deep Link Triggered"),
+          content: Text("Received: $link"),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                Navigator.of(navigatorKey.currentContext!).pop();
+                if (route != null) {
+                  navigatorKey.currentState?.pushNamed(route);
+                }
+              },
               child: const Text("OK"),
             ),
           ],
         ),
       );
     });
+  } else if (route != null) {
+    // Universal link → Navigate properly
+    if (isFromPush) {
+      navigatorKey.currentState?.pushNamed(route);
+    } else {
+      navigatorKey.currentState?.pushNamedAndRemoveUntil(route, (r) => r.isFirst);
+    }
+  } else {
+    _showSnackBar("Unknown deep link: $link");
+  }
+}
+
+  void _showSnackBar(String message) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = navigatorKey.currentContext;
+      if (context != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
+        );
+      }
+    });
+  }
+
+  void _showAppInbox() {
+    CleverTapPlugin.showInbox({
+      'title': 'App Inbox',
+      'tabs': ['Offers', 'Promotions'],
+      'backgroundColor': '#FFFFFF',
+      'titleColor': '#000000',
+      'messageColor': '#000000',
+      'buttonBorderColor': '#000000',
+      'buttonBackgroundColor': '#000000',
+      'buttonTextColor': '#FFFFFF',
+      'noMessageText': 'No Messages',
+      'noMessageTextColor': '#000000',
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        backgroundColor: Colors.deepPurple,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.mail_outline,color: Colors.white),
-            onPressed: _showAppInbox,
-          ),
-        ],
-      ),
+      appBar: AppBar(title: Text(widget.title), backgroundColor: Colors.deepPurple, actions: [
+        IconButton(icon: const Icon(Icons.mail_outline, color: Colors.white), onPressed: _showAppInbox),
+      ]),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ListView(
@@ -185,14 +249,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget _buildTextField(String labelText, String hintText, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10.0),
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          border: OutlineInputBorder(),
-          labelText: labelText,
-          hintText: hintText,
-        ),
-      ),
+      child: TextField(controller: controller, decoration: InputDecoration(border: OutlineInputBorder(), labelText: labelText, hintText: hintText)),
     );
   }
 
@@ -200,10 +257,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10.0),
       child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.white,
-          backgroundColor: Colors.deepPurple,
-        ),
+        style: ElevatedButton.styleFrom(foregroundColor: Colors.white, backgroundColor: Colors.deepPurple),
         onPressed: onPressed,
         child: Text(text),
       ),
@@ -223,68 +277,33 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _updateUserProfile() {
-    var dob = "2012-04-22";
-    var gender = 'M';
-
-    var profile = {
-      'Sports': 'Rugby',
-      'Team': 'New Zealand All Blacks',
-      'MVP': 'Jonah Lomu',
-      'DOB': dob,
-      'Gender': gender,
-    };
-
+    var profile = {'Sports': 'Rugby', 'Team': 'All Blacks', 'MVP': 'Jonah Lomu', 'DOB': '2012-04-22', 'Gender': 'M'};
     CleverTapPlugin.profileSet(profile);
   }
 
-  void _recordProductViewed() {
-    CleverTapPlugin.recordEvent("Product Viewed Flutter", {});
-  }
-
-  void _recordEvent() {
-    var eventData = {
-      'Product Category': 'Appliances',
-      'Product Name': 'Convection Microwave Oven'
-    };
-    CleverTapPlugin.recordEvent("Product Viewed Flutter Properties", eventData);
-  }
-
+  void _recordProductViewed() => CleverTapPlugin.recordEvent("Product Viewed Flutter", {});
+  void _recordEvent() => CleverTapPlugin.recordEvent("Product Viewed Flutter Properties", {'Product Category': 'Appliances', 'Product Name': 'Microwave'});
   void _recordChargedEvent() {
-    var chargeDetails = {
-      'Amount': 300,
-      'Payment Mode': 'Credit Card',
-      'Charged ID': 'Order123'
-    };
-
-    var items = [
-      {
-        'Category': 'Books',
-        'Product Name': 'Harry Potter',
-        'Quantity': 1
-      },
-      {
-        'Category': 'Electronics',
-        'Product Name': 'Bluetooth Speaker',
-        'Quantity': 2
-      }
-    ];
-
+    var chargeDetails = {'Amount': 300, 'Payment Mode': 'Credit Card', 'Charged ID': 'Order123'};
+    var items = [{'Category': 'Books', 'Product Name': 'Harry Potter', 'Quantity': 1}, {'Category': 'Electronics', 'Product Name': 'Bluetooth Speaker', 'Quantity': 2}];
     CleverTapPlugin.recordChargedEvent(chargeDetails, items);
   }
 }
 
 class DetailsScreen extends StatelessWidget {
   const DetailsScreen({super.key});
-
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Details Screen"),
-      ),
-      body: const Center(
-        child: Text("Welcome to the Details Screen!"),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text("Details")), body: const Center(child: Text("Details Screen!")));
+}
+
+class OffersScreen extends StatelessWidget {
+  const OffersScreen({super.key});
+  @override
+  Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text("Offers")), body: const Center(child: Text("Offers Screen!")));
+}
+
+class PromoScreen extends StatelessWidget {
+  const PromoScreen({super.key});
+  @override
+  Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text("Promotions")), body: const Center(child: Text("Promotions Screen!")));
 }
