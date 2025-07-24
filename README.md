@@ -1,108 +1,161 @@
-# CleverTap Flutter App - Updated to v3.2.0
+# 📱 CleverTap Flutter App – Push Notifications & Deep Linking
 
-This project is a sample Flutter application integrated with **CleverTap SDK v3.2.0**. This guide outlines the steps taken to successfully upgrade to the latest SDK version and resolve compatibility issues.
+A **Flutter application** demonstrating the **integration of CleverTap SDK** with the following features:
 
-## Prerequisites
-- Flutter **3.2.0**
-- Android Studio with JDK 17
-- Gradle 8.0+
+✅ **Push Notifications** (Click Handling & Deep Linking)
+✅ **CleverTap App Inbox**
+✅ **Internal Deep Links** (`myapp://details`)
+✅ **Universal Links** (`https://ct-web-sdk-react.vercel.app/details`)
 
----
-
-## Steps to Upgrade to CleverTap SDK v3.2.0
-
-### 1. **Update `build.gradle` Files**
-#### `android/app/build.gradle`
-- Updated `compileSdkVersion` to **35**
-- Updated `sourceCompatibility` and `targetCompatibility` to **JavaVersion.VERSION_17**
-- Updated Kotlin JVM target to **`17`**
-
-**Updated Code:**
-```gradle
-android {
-    compileSdkVersion 35
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-}
-```
-
-#### `android/build.gradle`
-- Added Kotlin Gradle Plugin dependency for **v1.9.0**
-
-**Updated Code:**
-```gradle
-buildscript {
-    dependencies {
-        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0'
-    }
-}
-```
+This project is designed for developers looking to implement **engagement and retention features** in their Flutter apps using CleverTap.
 
 ---
 
-### 2. **Add/Update `.gitignore` File**
-To prevent unwanted files from being tracked, the following entries were added to `.gitignore`:
-```gitignore
-# Flutter build files
-build/
-*.lock
-.dart_tool/
-.packages
-.pub/
-.idea/
-.vscode/
-.flutter-plugins
-.flutter-plugins-dependencies
-*.iml
+## 🚀 Features Implemented
+
+### ✅ 1. CleverTap SDK Integration
+
+* Initialization of CleverTap SDK
+* Push Notification Channel creation for Android
+* Debugging enabled (`setDebugLevel`)
+* User personalization enabled
+* Location & network reporting configured
+
+---
+
+### 🔔 2. Push Notifications
+
+* Push notifications received and tracked via CleverTap
+* Custom payload handling for:
+
+  * `wzrk_dl` (CleverTap default deep link key)
+  * `deep_link` (custom property)
+* Implemented **Push Primer** for iOS to request push permission with a custom UI
+
+---
+
+### 📬 3. CleverTap App Inbox
+
+* Fully functional **App Inbox** integration
+* Supports tabs:
+
+  * Offers
+  * Promotions
+* Customized appearance:
+
+  * Background color
+  * Button styles
+  * Empty state text
+
+---
+
+### 🔗 4. Deep Link Handling
+
+#### 📦 Internal Deep Links
+
+* Format: `myapp://details`
+* Uses **iOS custom URL scheme**
+* Handled via **MethodChannel** in `AppDelegate.swift` to communicate with Flutter
+* Displays **alert dialog** to confirm handling
+
+#### 🌐 Universal Links
+
+* Format: `https://ct-web-sdk-react.vercel.app/details`
+* Implemented using:
+
+  * iOS **Associated Domains** (`applinks:ct-web-sdk-react.vercel.app`)
+  * Flutter **uni\_links** package
+* Navigates directly to `DetailsScreen` on click
+
+---
+
+## 🏗️ Project Structure
+
+```
+clevertapflutterapp/
+├── android/                # Android native code
+├── ios/                    # iOS native code
+│   └── Runner/
+│       └── AppDelegate.swift   # Handles Universal Links & MethodChannel
+├── lib/
+│   └── main.dart           # Flutter UI & CleverTap integration
+├── pubspec.yaml
+└── README.md
 ```
 
 ---
 
-### 3. **Remove Unwanted Files (If Already Tracked)**
-The following command was used to clean up previously committed build and config files:
+## 🔧 Setup & Installation
+
+### **1. Clone the repository**
+
 ```bash
-git rm -r --cached build .dart_tool .idea .vscode .flutter-plugins-dependencies
+git clone https://github.com/rohkode/clevertapflutterapp-latest.git
+cd clevertapflutterapp-latest
 ```
 
----
+### **2. Install dependencies**
 
-### 4. **Clean and Rebuild the Project**
-After the changes, the project was cleaned and dependencies were fetched again to ensure compatibility:
 ```bash
-flutter clean
 flutter pub get
-flutter build apk
+```
+
+### **3. Run the app**
+
+```bash
+flutter run
 ```
 
 ---
 
-### 5. **Test the Integration**
-- Verified successful data flow to the CleverTap dashboard
-- Tested push notifications, in-app messages, and user profile updates
+## ✅ Testing Features
+
+### **Deep Link Testing**
+
+* Internal Deep Link:
+
+  * Use: `myapp://details`
+  * Trigger via **push notification payload**
+* Universal Link:
+
+  * Open Safari and visit:
+
+    ```
+    https://ct-web-sdk-react.vercel.app/details
+    ```
+  * App should open and navigate to **Details Screen**
 
 ---
 
-## Common Issues and Fixes
-### Error: `Unknown Kotlin JVM target: 1.9`
-**Solution:** Ensure the following settings are correctly updated:
-- `kotlinOptions { jvmTarget = "17" }`
-- `sourceCompatibility = JavaVersion.VERSION_17`
-- `targetCompatibility = JavaVersion.VERSION_17`
+## 🔒 iOS Configuration Details
 
-### Error: `'compileReleaseJavaWithJavac' and 'compileReleaseKotlin' have different JVM targets`
-**Solution:** Ensure Java and Kotlin versions are aligned to **17** as shown in the steps above.
+### **Info.plist**
+
+* Add custom scheme for internal deep links:
+
+```xml
+<key>LSApplicationQueriesSchemes</key>
+<array>
+    <string>myapp</string>
+</array>
+```
+
+### **Associated Domains**
+
+* Enable in Xcode → Signing & Capabilities → Associated Domains:
+
+```
+applinks:ct-web-sdk-react.vercel.app
+```
+
+### **AppDelegate.swift**
+
+* Implemented:
+
+```swift
+application(_:continue:restorationHandler:)
+```
+
+* Passes the Universal Link to Flutter via **MethodChannel**
 
 ---
-
-## Repository Information
-- **Author:** Rohit Khandka
-- **GitHub Repository:** [clevertapflutterapp-latest](https://github.com/rohkode/clevertapflutterapp-latest)
-
-For further guidance, refer to the [CleverTap Flutter SDK Documentation](https://developer.clevertap.com/docs/flutter-sdk).
